@@ -135,16 +135,16 @@ class PhotoCameraViewController: UIViewController {
         }
     }
     
-    @objc func addCaptureLayer(position: AVCaptureDevicePosition) {
+    @objc func addCaptureLayer(position: AVCaptureDevice.Position) {
         
-        captureSession.sessionPreset = AVCaptureSessionPresetPhoto
+        captureSession.sessionPreset = AVCaptureSession.Preset.photo
         cameraDevice = self.getDevice(position: position)
         
         var error : NSError?
         var input: AVCaptureDeviceInput?
         
         do {
-            input = try AVCaptureDeviceInput(device: cameraDevice)
+            input = try AVCaptureDeviceInput(device: cameraDevice!)
         } catch let e as NSError {
             input = nil
             error = e
@@ -152,20 +152,20 @@ class PhotoCameraViewController: UIViewController {
             print("An error occurred \(error?.localizedDescription ?? "")")
         }
         
-        if error == nil && captureSession.canAddInput(input) {
-            captureSession.addInput(input)
+        if error == nil && captureSession.canAddInput(input!) {
+            captureSession.addInput(input!)
             
             stillImageOutput = AVCaptureStillImageOutput()
             stillImageOutput!.outputSettings = [AVVideoCodecKey: AVVideoCodecJPEG]
             
-            if captureSession.canAddOutput(stillImageOutput) {
-                captureSession.addOutput(stillImageOutput)
+            if captureSession.canAddOutput(stillImageOutput!) {
+                captureSession.addOutput(stillImageOutput!)
                 
-                if let layer = AVCaptureVideoPreviewLayer(session: captureSession) {
-                    layer.videoGravity = AVLayerVideoGravityResizeAspect
-                    previewView?.layer.addSublayer(layer)
-                    previewLayer = layer
-                }
+                let layer = AVCaptureVideoPreviewLayer(session: captureSession)
+                layer.videoGravity = AVLayerVideoGravity.resizeAspect
+                previewView?.layer.addSublayer(layer)
+                previewLayer = layer
+                
                 self.finalOverlayView.isHidden = true
                 captureSession.startRunning()
             }
@@ -208,7 +208,7 @@ class PhotoCameraViewController: UIViewController {
         
         if captureSession.isRunning {
         
-        if let videoConnection = output.connection(withMediaType: AVMediaTypeVideo) {
+        if let videoConnection = output.connection(with: AVMediaType.video) {
             
             // Make sure always portrait
             videoConnection.videoOrientation = AVCaptureVideoOrientation.portrait
@@ -257,18 +257,15 @@ class PhotoCameraViewController: UIViewController {
         }
     }
     
-    private func getDevice(position: AVCaptureDevicePosition) -> AVCaptureDevice? {
-        guard let devices = AVCaptureDevice.devices() else {
-            return nil
-        }
-        for d in devices {
-            if let deviceConverted = d as? AVCaptureDevice {
-                if(deviceConverted.position == position) {
-                    return deviceConverted
-                }
+    private func getDevice(position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        var capturedDevice: AVCaptureDevice?
+        
+        for device in AVCaptureDevice.devices() {
+            if(device.position == position) {
+                capturedDevice = device
             }
         }
-        return nil
+        return capturedDevice
     }
     
     // MARK: -
